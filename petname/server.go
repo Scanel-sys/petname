@@ -22,7 +22,7 @@ type server struct {
 	petnamepb.UnimplementedPetnameGeneratorServer
 }
 
-func (s *server) Ping(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *server) Ping(_ context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
@@ -41,17 +41,17 @@ func (s *server) Generate(_ context.Context, in *petnamepb.PetnameRequest) (*pet
 }
 
 func (s *server) GenerateMany(in *petnamepb.PetnameStreamRequest, stream petnamepb.PetnameGenerator_GenerateManyServer) error {
-	if in.Words <= 0 {
+	if in.GetWords() <= 0 {
 		slog.Error("[ GenerateMany ] Words <= 0")
 		return status.Error(codes.InvalidArgument, "words must be > 0")
 	}
 
-	if in.Names <= 0 {
+	if in.GetNames() <= 0 {
 		slog.Error("[ GenerateMany ] Names <= 0")
 		return status.Error(codes.InvalidArgument, "names must be > 0")
 	}
 
-	for range int(in.Names) {
+	for range in.GetNames() {
 		if err := stream.Context().Err(); err != nil {
 			slog.Error("[ GenerateMany ] Stream.Context().Err()", "error", err)
 			return err
@@ -69,7 +69,7 @@ func (s *server) GenerateMany(in *petnamepb.PetnameStreamRequest, stream petname
 }
 
 func parsePort() (string, error) {
-	configPath := flag.String("config", "", "config path")
+	configPath := flag.String("config", "config.yaml", "config path")
 	flag.Parse()
 
 	cfg, err := LoadPetnameConfig(*configPath)
